@@ -1,0 +1,171 @@
+#include "burrowswheeler.h"
+
+using namespace std;
+
+void encode(string input_name, string output_name, int std_block_size){
+    ifstream input;
+    ofstream output;
+    input.open(input_name.c_str(), ios::binary | ios::in);
+    if(!input.is_open()){
+        cout<<"Arquivo de entrada não encontrado."<<endl;
+        return;
+    }
+    int block_size = std_block_size;
+    output.open(output_name.c_str(), ios::binary | ios::out);
+    string original;
+    original.resize(block_size);
+    input.seekg(0, input.end);
+    int size = input.tellg(); // tamanho do arquivo
+    input.seekg(0, input.beg);
+    int pos = 0;
+    int final_block_size = 0; // tamanho do último bloco de texto
+    output.write((char*)&final_block_size, sizeof(int)); // só um "placeholder", no final vai ser reescrito novamente o valor certo
+    output.write((char*)&block_size, sizeof(int)); // tamanho do bloco padrão
+    while(input.read(&original[0], block_size)){
+        priority_queue<string, vector<string>, greater<string> > rotations; // vai armazenar as strings ordenadas alfabeticamente
+        for(int i=0; i<block_size; i++) {
+            string str;
+            str += original[i];
+            for(int j=i+1; j!=i; j++) {
+                if(j==block_size){
+                    j=0;
+                }
+                str += original[j];
+                if(j==block_size-1){
+                    j=-1;
+                }
+            }
+            rotations.push(str);
+        }
+        string coded; // string codificada
+        int end_pos; // posição onde o último caracter da string vai ficar na string codificada
+        int counter = 0;
+        while(!rotations.empty()){
+            coded.push_back(rotations.top()[block_size-1]);
+            if(rotations.top().compare(original)==0){
+                end_pos = counter;
+            }
+            rotations.pop();
+            ++counter;
+        }
+        
+        output.write((char*) &end_pos, sizeof(int));
+        output.write(&coded[0], block_size);
+        pos = input.tellg();
+        
+        if(block_size==final_block_size){ // se o bloco lido tiver sido o último do arquivo
+            break;
+        } else if(size-pos<block_size && (size-pos!=0)){ // se o último bloco do arquivo tiver que ser menor que o tamanho padrão
+            final_block_size = size-pos;
+            block_size = final_block_size; 
+            original.resize(final_block_size);
+        }
+    }
+    output.seekp(0, output.beg);
+    output.write((char*)&final_block_size, sizeof(int));
+    
+    input.close();
+    output.close();
+}
+void decode(string input_name, string output_name){
+    ifstream input;
+    ofstream output;
+    input.open(input_name.c_str(), ios::binary | ios::in);
+    if(!input.is_open()){
+        cout<<"Arquivo de entrada não encontrado."<<endl;
+        return;
+    }
+    input.seekg(0, input.end);
+    int size = input.tellg();
+    input.seekg(0, input.beg);
+    
+    output.open(output_name.c_str(), ios::binary | ios::out);
+    int final_block_size, block_size;
+    input.read((char*)&final_block_size, sizeof(int));
+    input.read((char*)&block_size, sizeof(int));
+    int end_pos; // posição do último caractere da string original na string codificada
+    int file_pos = 0;
+    while(input.read((char*)&end_pos, sizeof(int))){
+        // traz bloco pra memória
+        string last; // última coluna resultante da BWT
+        last.resize(block_size);
+        
+        input.read(&last[0], block_size);
+        
+        // cria as estruturas auxiliares
+        map<char, int> how_many; // (K) quantos daquele caracter existem no bloco
+        vector<int> n_before(block_size, -1); // (C) quantos daquele caracter antes da ocorrência i
+        map<char, int> start; // (M) posição da primeira ocorrência de cada caracter
+        
+        for(int i=0; i<block_size; ++i){
+            if(how_many.count(last[i])==0){ // se for primeira ocorrência do caracter
+                start[last[i]] = -1; // insere no mapa pra depois ser percorrido e calculado
+                n_before[i] = 0;
+                how_many[last[i]] = 1;
+            } else {
+                n_before[i] = how_many[last[i]];
+                ++how_many[last[i]];
+            }
+        }
+        
+        // gera as posições da primeira ocorrência de cada caracter
+        int pos = 0;
+        for(map<char,int>::iterator it=start.begin(); it!=start.end(); ++it){
+            it->second = pos;
+            pos += how_many[it->first];
+        }
+        
+        
+        // faz a decodificação de fato
+        int i = end_pos;
+        string original; // string decodificada
+        original.resize(block_size);
+        
+        for(int j = block_size-1; j>=0; --j){
+            original[j] = last[i];
+            i = n_before[i] + start[last[i]];
+        }
+        
+        // passa a string decodificada pro arquivo
+        output.write(&original[0], block_size);
+        file_pos = input.tellg();
+        // cout<<"file_pos = "<<file_pos<<endl;
+        // cout<<"dif = "<<size-file_pos<<endl;
+        
+        if(block_size == final_block_size){ // significa que o bloco lido era o último
+            break;
+        } else if(size-file_pos==final_block_size+4){ // se for o último bloco
+            block_size = final_block_size;
+        }
+        
+    }
+    input.close();
+    output.close();
+}
+
+// void quickSort(vector<int>& order, int left, int right, string original, int block_size) {
+//       int i = left, j = right;
+//       int tmp;
+//       int pivot_idx = (left + right) / 2;
+//       cout<<"asdasd";
+//       cout<<"original: "<<original<<endl;
+//       string pivot = original.substr(pivot_idx, block_size - pivot_idx);
+//       while (i <= j) {
+//             while (original.substr(i, block_size-i).compare(pivot) < 0)
+//                   i++;
+//             while (original.substr(j, block_size-j).compare(pivot) > 0)
+//                   j--;
+//             if (i <= j) {
+//                   tmp = order[i];
+//                   order[i] = order[j];
+//                   order[j] = tmp;
+//                   i++;
+//                   j--;
+//             }
+//       };
+//      
+//       if (left < j)
+//             quickSort(order, left, j, original, block_size);
+//       if (i < right)
+//             quickSort(order, i, right, original, block_size);
+// }
