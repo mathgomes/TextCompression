@@ -119,11 +119,13 @@ void BWTdecode(stringstream& input_ss, string output_name){
         // passa a string decodificada pro arquivo
         output.write(&original[0], block_size);
         file_pos = input_ss.tellg();
-
+        //cout<<"["<<original<<"]"<<endl;
         if(block_size == final_block_size){ // significa que o bloco lido era o último
+            
             break;
         } else if(size-file_pos==final_block_size+4){ // se for o último bloco
             block_size = final_block_size;
+            //cout<<"["<<original<<"]"<<endl;
         }
         
     }
