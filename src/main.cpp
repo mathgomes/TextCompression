@@ -12,7 +12,7 @@
 #include "burrowswheeler.h"
 #include "huffman.hpp"
 #include "runLength.hpp"
-#include "compressor.hpp"
+#include "util.hpp"
 #include <string>
 #include <sstream>
 
@@ -67,64 +67,11 @@ int main(int argc, char *argv[]){
             BWTencode(input_name, output_ss, block_size);
             string bwt = output_ss.str(); // string que representa a saída do btw
 
-            // header para guardar as informações uteis
-            string header;
-
-            // String codificada com huffman sem compressão
-            string encodedTextHUF;
-            // String codificada com huffman comprimida
-            char *compressedHUF;
-            // Tamanho do vetor da string comprimida
-            int compressedSizeHUF;
-
-            // String codificada com run length ( estrutura letra->repetição)
-            vector<codedSymbol> encodedTextRL;
-            // vetor de booleanos representando os valores não comprimidos
-            // das repetições de cada caracter
-            vector<bool> booleanReps;
-            // vetor representando os valores comprimidos de cada repetição
-            char *compressedReps;
-            // tamanho do vetor de valroes comprimidos
-            int sizeCompressedRL;
-
-            readInputFile(input_name,originalText);
-
-            RLencode(bwt,encodedTextRL,booleanReps,header);
-            compressedReps = RLcompress(encodedTextRL,booleanReps,&sizeCompressedRL);
-            stringstream sstr2;
-            int i = 0;
-            for( codedSymbol s : encodedTextRL) {
-
-                sstr2 << s.symbol;
-                sstr2 << compressedReps[i];
-                i++;
-            }
-            string outputRL = sstr2.str();
-            HUFencode(outputRL,encodedTextHUF,header);
-            compressedHUF = HUFcompress(encodedTextHUF,&compressedSizeHUF);
-            writeToFileHUF(header,output_name,&compressedSizeHUF,compressedHUF);
 
 
         } else if (b && h){
             cout<<"\nComprimindo usando BWT e Huffman..."<<endl;
             output_name+=".hbw";
-            int block_size;
-            stringstream sstr(txtblck);
-            sstr>>block_size;
-            stringstream output_ss;
-            BWTencode(input_name, output_ss, block_size);
-            string bwt = output_ss.str(); // string que representa a saída do btw
-
-            string header;
-            string originalText;
-            string encodedText;
-            char *compressedHUF;
-            int compressedSize;
-
-            readInputFile(input_name,originalText);
-            HUFencode(bwt,encodedText,header);
-            compressedHUF = HUFcompress(encodedText,&compressedSize);
-            writeToFileHUF(header,output_name,&compressedSize,compressedHUF);
 
         } else if(b && r){
             cout<<"\nComprimindo usando BWT e Run-Length..."<<endl;
@@ -136,43 +83,18 @@ int main(int argc, char *argv[]){
             BWTencode(input_name, output_ss, block_size);
             string bwt = output_ss.str(); // string que representa a saída do btw
 
-            string header;
-            string originalText;
+            string compressedOut;
+            string decodedString;
+            FILE *output = fopen(output_name.c_str(),"wb");
 
-            vector<codedSymbol> encodedText;
-            vector<bool> booleanReps;
-            char *compressedReps;
-            int sizeCompressed;
-
-            RLencode(bwt,encodedText,booleanReps,header);
-            compressedReps = RLcompress(encodedText,booleanReps,&sizeCompressed);
-            writeToFileRL(output_name,header,compressedReps,&sizeCompressed,encodedText);
+            RLencode(inputText,output,&compressedOut);
+            fwrite(&compressedOut[0],compressedOut.size(),1,output);
+            rewind(output);
+            fclose(output);
 
         } else if(h && r){
             cout<<"\nComprimindo usando Huffman e Run-Length..."<<endl;
             output_name+=".hrl";
-
-            string header;
-            string originalText;
-
-            string encodedTextHUF;
-            char *compressedHUF;
-            int compressedSizeHUF;
-
-            vector<codedSymbol> encodedText;
-            vector<bool> booleanReps;
-            char *compressedReps;
-            int sizeCompressedRL;
-
-            readInputFile(input_name,originalText);
-
-            HUFencode(originalText,encodedTextHUF,header);
-            compressedHUF = HUFcompress(encodedTextHUF,&compressedSizeHUF);
-            string compressedHUFstr(compressedHUF);
-
-            RLencode(originalText,encodedText,booleanReps,header);
-            compressedReps = RLcompress(encodedText,booleanReps,&sizeCompressedRL);
-            writeToFileRL(output_name,header,compressedReps,&sizeCompressedRL,encodedText);
 
 
 
@@ -192,34 +114,22 @@ int main(int argc, char *argv[]){
             output_name+=".huf";
             cout<<"\nComprimindo usando Huffman..."<<endl;
 
-            string header;
-            string originalText;
-            string encodedText;
-            char *compressedHUF;
-            int compressedSize;
-
-            readInputFile(input_name,originalText);
-            HUFencode(originalText,encodedText,header);
-            compressedHUF = HUFcompress(encodedText,&compressedSize);
-            writeToFileHUF(header,output_name,&compressedSize,compressedHUF);
 
 
         } else if(r){
             output_name+=".rln";
             cout<<"\nComprimindo usando Run-Length..."<<endl;
 
-            string header;
-            string originalText;
+            string compressedOut;
+            string inputText;
+            readInputFile(input_name,inputText);
+            FILE *output = fopen(output_name.c_str(),"wb");
 
-            vector<codedSymbol> encodedText;
-            vector<bool> booleanReps;
-            char *compressedReps;
-            int sizeCompressed;
+            RLencode(inputText,output,&compressedOut);
+            fwrite(&compressedOut[0],compressedOut.size(),1,output);
+            rewind(output);
+            fclose(output);
 
-            readInputFile(input_name,originalText);
-            RLencode(originalText,encodedText,booleanReps,header);
-            compressedReps = RLcompress(encodedText,booleanReps,&sizeCompressed);
-            writeToFileRL(output_name,header,compressedReps,&sizeCompressed,encodedText);
         }
     } else if (!process.compare("decode")){
         string file_ext = input_name.substr(input_name.size()-4, 4); // extensão do arquivo
@@ -274,26 +184,22 @@ int main(int argc, char *argv[]){
         } else if(!file_ext.compare(".rln")){
             cout<<"\nDescomprimindo usando Run-Length..."<<endl;
 
-            int maxFreqBits;
-            int sizeCharactersArray;
-            int sizeCompressedArray;
-            string header;
-            FILE *arq;
-            arq = fopen(input_name.c_str(),"rb");
-            // guardar o tamanho do header antes
-            int res1 = fread(&header[0],sizeof(int),1,arq);
-            int res2 = fread(&sizeCharactersArray,sizeof(int),1,arq);
-            int res3 = fread(&sizeCompressedArray,sizeof(int),1,arq);
+            FILE *input;
+            input = fopen(input_name.c_str(),"rb");
+            rewind(input);
+            int charactersQtd;
+            int maxBitQtd;
+            int encodedSize;
+            string encodedString;
+            string original;
 
-            string charactersRL;
-            charactersRL.resize(sizeCharactersArray);
-            string compressedRL;
-            compressedRL.resize(sizeCompressedArray);
-
-            fread(&charactersRL[0],sizeCharactersArray*sizeof(char),1,arq);
-            fread(&compressedRL[0],sizeCompressedArray*sizeof(char),1,arq);
-
-            string result = decompressRL(charactersRL,compressedRL,&maxFreqBits);
+            fread(&maxBitQtd,sizeof(int),1,input);
+            fread(&charactersQtd,sizeof(int),1,input);
+            fread(&encodedSize,sizeof(int),1,input);
+            encodedString.resize(encodedSize);
+            fread(&encodedString[0],encodedSize,1,input);
+            original = RLdecode(&encodedString,&maxBitQtd,&charactersQtd);
+            fclose(input);
 
 
         } else {
