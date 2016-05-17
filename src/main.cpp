@@ -7,7 +7,6 @@
             Bárbara Darques Barros       - 7243081
 */
 #include "burrowswheeler.h"
-#include "huffman.hpp"
 #include "runLength.hpp"
 #include "util.hpp"
 #include <string>
@@ -81,12 +80,11 @@ int main(int argc, char *argv[]){
             string bwt = output_ss.str(); // string que representa a saída do btw
 
             string compressedOut;
-            string decodedString;
             FILE *output = fopen(output_name.c_str(),"wb");
-
-            RLencode(inputText,output,&compressedOut);
+            // codifica a string e a escreve no arquivo alem de informações
+            // necessarias para codificação
+            RLencode(bwt,output,&compressedOut);
             fwrite(&compressedOut[0],compressedOut.size(),1,output);
-            rewind(output);
             fclose(output);
 
         } else if(h && r){
@@ -124,7 +122,6 @@ int main(int argc, char *argv[]){
 
             RLencode(inputText,output,&compressedOut);
             fwrite(&compressedOut[0],compressedOut.size(),1,output);
-            rewind(output);
             fclose(output);
 
         }
@@ -189,7 +186,9 @@ int main(int argc, char *argv[]){
             int encodedSize;
             string encodedString;
             string original;
-
+            // le do arquivo, na ordem em que foi escrito
+            // os valores das informações necessárias para
+            // decodificação
             fread(&maxBitQtd,sizeof(int),1,input);
             fread(&charactersQtd,sizeof(int),1,input);
             fread(&encodedSize,sizeof(int),1,input);

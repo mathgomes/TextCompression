@@ -15,7 +15,15 @@
 #include <vector>
 
 using namespace std;
+/**
+    Codifica a string de entrada pelo metodo run length e a comprime
+    @param
+        fInput_name : Nome do arquivo de entrada
+        inputText : String de entrada
+        compressedOut : String comprimida de saida no formato ( todos os caracteres + todas as repetições)
+        output : Arquivo de saida para se guardar valores necessario para decodificação
 
-void RLencode(string &fInput_name, fstream& output, string *compressedOut);
+*/
+void RLencode(string &fInput_name, FILE *output, string *compressedOut);
 string RLdecode(string *compressedString, int *maxBitQtd, int *charactersQtd);
 #endif // RUNLENGTH_HPP_INCLUDED
