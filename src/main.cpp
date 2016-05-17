@@ -2,9 +2,6 @@
     UNIVERSIDADE DE SÃO PAULO - ICMC
     DEPARTAMENTO DE CIÊNCIAS DE COMPUTAÇÃO
     SCC0261 Multimídia - 1o Sem/2016
-    main.cpp
-    Objetivo: Realizar todas as chamadas de funções necessárias
-    para receber e processar as entradas
 
     @author Matheus Gomes da Silva Horta - 8532321
             Bárbara Darques Barros       - 7243081
